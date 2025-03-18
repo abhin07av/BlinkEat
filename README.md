@@ -14,8 +14,6 @@ BlinkEat is a full-stack food ordering platform built using React.js and Firebas
 📝 Update Menus – Owners can add, remove, and update menu items.
 📦 Manage Orders – Track and update the status of customer orders.
 📊 Dashboard – Dedicated dashboard for managing restaurant operations.
-✅ Admin (Boss) Features
-👨‍⚖️ Approve Requests – Approve or reject restaurant registration requests.
 🏗️ Tech Stack
 Frontend: React.js, React Router, Bootstrap
 Backend: Firebase Firestore (Database), Firebase Auth (Authentication)
@@ -26,7 +24,6 @@ Deployment: Firebase Hosting
 📝 Menu and Order Placement
 📦 Order History
 🏢 Owner Dashboard
-✅ Admin Approval Panel
 🌐 How to Run
 Clone the repository:
 bash
