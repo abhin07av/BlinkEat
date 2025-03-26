@@ -1,4 +1,4 @@
-🍽️ BlinkEat – Food Ordering Platform
+🍽️ BlinkEat – Food Ordering Platform || Website LINK: https://blinkeat-32091.web.app 
 BlinkEat is a full-stack food ordering platform built using React.js and Firebase. It allows users to explore restaurant menus, place orders, and manage their order history. Restaurant owners can register their restaurants, update menus, and track orders through a dedicated dashboard.
 
 🚀 Features
