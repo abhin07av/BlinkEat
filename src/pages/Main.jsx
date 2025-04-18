@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useFirebase } from "../context/Firebase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { Card, Container, Row, Col } from "react-bootstrap";
 import MyNavBar from "../components/Navbar";
@@ -11,34 +11,46 @@ import "./Main.css";
 const Main = () => {
     const firebase = useFirebase();
     const navigate = useNavigate();
+    const location = useLocation();
     const [isLoggedIn, setIsLoggedIn] = useState(null);
     const [isOwner, setIsOwner] = useState(null);
     const [restaurants, setRestaurants] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        setIsLoggedIn(!!firebase.user);
-        setIsOwner(firebase.user && firebase.role === "owner");
-
-        const fetchRestaurants = async () => {
+    const fetchRestaurants = async () => {
+        setIsLoading(true);
+        try {
             const db = getFirestore();
             const restaurantId = sessionStorage.getItem("restaurantId");
 
             if (restaurantId) {
-                navigate("/");
-            } else {
-                const restaurantRef = collection(db, "restaurants");
-                const querySnapshot = await getDocs(restaurantRef);
-                const restaurantList = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                }));
-
-                setRestaurants(restaurantList);
+                // If restaurant is selected but user navigated back, clear it
+                sessionStorage.removeItem("restaurantId");
             }
-        };
+            
+            const restaurantRef = collection(db, "restaurants");
+            const querySnapshot = await getDocs(restaurantRef);
+            const restaurantList = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
 
+            setRestaurants(restaurantList);
+        } catch (error) {
+            console.error("Error fetching restaurants:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        setIsLoggedIn(!!firebase.user);
+        setIsOwner(firebase.user && firebase.role === "owner");
+        
+        // Fetch restaurants whenever the component mounts or location changes
         fetchRestaurants();
-    }, [firebase.user, firebase.role, firebase.firestore,navigate]);
+        
+    }, [firebase.user, firebase.role, location.pathname]);
 
     // Handle Restaurant Selection
     const handleSelectRestaurant = (id, name) => {
@@ -56,7 +68,11 @@ const Main = () => {
             <Container className="flex-grow-1 py-5">
                 <h1 className="Choose large text-center mb-5 ">Choose a Restaurant</h1>
 
-                {!sessionStorage.getItem("restaurantId") && (
+                {isLoading ? (
+                    <div className="text-center py-5">
+                        <p className="orangetext">Loading restaurants...</p>
+                    </div>
+                ) : (
                     <Row>
                         {restaurants.map((restaurant) => (
                             <Col key={restaurant.id} md={4} className="mb-4">
@@ -76,7 +92,6 @@ const Main = () => {
                                         >
                                             Select Restaurant
                                         </button>
-
                                     </Card.Body>
                                 </Card>
                             </Col>
