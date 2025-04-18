@@ -15,7 +15,7 @@ import OrderHistory from './pages/OrderHistory';
 // CSS
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-
+import './pages/Main.css'
 function App() {
   return (
     <div>

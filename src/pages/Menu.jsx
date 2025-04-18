@@ -91,55 +91,56 @@ const MenuPage = () => {
         <div className="peach">
             {/* ✅ Display appropriate navbar */}
             {!firebase.user && <MyNavBar />}
-            
+
             {firebase.user && (isOwner ? <OwnerNavBar /> : <SignedNavBar />)}
+            <div className="background-section">
+                <div className="container-fluid min-vh-100 d-flex flex-column">
+                    <div className="container mt-4">
+                        <h2 className="mb-4 text-center Choose large underline">Restaurant Menu</h2>
 
-            <div className="container-fluid min-vh-100 d-flex flex-column">
-                <div className="container mt-4">
-                    <h2 className="mb-4 text-center orangetext large underline">Restaurant Menu</h2>
-
-                    {/* ✅ Display Category-Wise Menu */}
-                    {Object.keys(menuItems).length > 0 ? (
-                        Object.entries(menuItems).map(([category, items]) => (
-                            <div key={category} className="mb-5">
-                                <h3 className="large text-black">{category} ({items.length})</h3>
-                                <div className="row">
-                                    {items.map((item) => (
-                                        <div key={item.id} className="menu orangetext background">
-                                            <div>{item.name}</div>
-                                            <div>₹{item.price.toFixed(2)}</div>
-                                            <div className="d-flex align-items-center">
-                                                {getQuantity(item) > 0 ? (
-                                                    <>
-                                                        <Button variant="danger" onClick={() => decreaseQuantity(item)}>-</Button>
-                                                        <span className="mx-3">{getQuantity(item)}</span>
-                                                        <Button variant="success" onClick={() => increaseQuantity(item)}>+</Button>
-                                                    </>
-                                                ) : (
-                                                    <button className="button" onClick={() => addToCart(item)}>Order Now</button>
-                                                )}
+                        {/* ✅ Display Category-Wise Menu */}
+                        {Object.keys(menuItems).length > 0 ? (
+                            Object.entries(menuItems).map(([category, items]) => (
+                                <div key={category} className="mb-5">
+                                    <h3 className="large text-black">{category} ({items.length})</h3>
+                                    <div className="row">
+                                        {items.map((item) => (
+                                            <div key={item.id} className="menu orangetext background">
+                                                <div>{item.name}</div>
+                                                <div>₹{item.price.toFixed(2)}</div>
+                                                <div className="d-flex align-items-center">
+                                                    {getQuantity(item) > 0 ? (
+                                                        <>
+                                                            <Button variant="danger" onClick={() => decreaseQuantity(item)}>-</Button>
+                                                            <span className="mx-3">{getQuantity(item)}</span>
+                                                            <Button variant="success" onClick={() => increaseQuantity(item)}>+</Button>
+                                                        </>
+                                                    ) : (
+                                                        <button className="button" onClick={() => addToCart(item)}>Order Now</button>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-center text-white">No menu items available.</p>
+                        )}
+
+                        {/* ✅ Cart Section */}
+                        {orders.length > 0 && (
+                            <div className="cart py-4 d-flex justify-content-between align-items-center">
+                                <h1 className="mr-1 text-white">🍽️ Your Orders</h1>
+                                <div className="d-flex align-items-center">
+                                    <span className="text-white me-3">Total: ₹{getTotalPrice()}</span>
+                                    <button className="viewcart" onClick={() => navigate("/carts")}>
+                                        View Cart ({orders.length})
+                                    </button>
                                 </div>
                             </div>
-                        ))
-                    ) : (
-                        <p className="text-center text-white">No menu items available.</p>
-                    )}
-
-                    {/* ✅ Cart Section */}
-                    {orders.length > 0 && (
-                        <div className="cart py-4 d-flex justify-content-between align-items-center">
-                            <h1 className="mr-1 text-white">🍽️ Your Orders</h1>
-                            <div className="d-flex align-items-center">
-                                <span className="text-white me-3">Total: ₹{getTotalPrice()}</span>
-                                <button className="viewcart" onClick={() => navigate("/carts")}>
-                                    View Cart ({orders.length})
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

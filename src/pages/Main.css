@@ -5,10 +5,33 @@
 .orangetext{
     color: #D4844A !important;
 }
+.Choose{
+    color:#662e1496 !important;
+}
 .orangebg{
     background-color: #D4844A !important;
     color: black !;
 }
+.background-section {
+    background-image: url('../../public/background.png'); /* adjust path if in src/assets */
+    background-size: cover;
+    width: 100vw;
+    background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  }
+  .backgroundimage{
+    background-image: url('../../public/background.png');
+    background-size: cover;
+    width: 100vw;
+    background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  }
 .peach{
     background-color:#F8D5B8 !important;
 }

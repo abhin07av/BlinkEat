@@ -140,7 +140,7 @@ const PlaceOrder = () => {
     };
 
     return (
-        <div className="peach min-vh-100 d-flex flex-column">
+        <div className="backgroundimage peach min-vh-100 d-flex flex-column">
             <SignedNavBar />
             <Container className="flex-grow-1 py-5 d-flex justify-content-center">
                 <Card className="p-4 w-100 w-md-75 w-lg-50 border-secondary text-white bg-black shadow-lg">

@@ -114,7 +114,7 @@ const OwnerDashboard = () => {
   };
 
   return (
-    <div>
+    <div className="backgroundimage">
       <OwnerNavBar />
       <div className="container p-4">
         <h1 className="text-center mb-4">Owner Dashboard</h1>

@@ -51,9 +51,10 @@ const Main = () => {
             {!isLoggedIn && <MyNavBar />}
             {isLoggedIn && !isOwner && <SignedNavBar />}
             {isLoggedIn && isOwner && <OwnerNavBar />}
-
+            <div className="background-section">
+            
             <Container className="flex-grow-1 py-5">
-                <h1 className="orangetext large text-center mb-5 ">Choose a Restaurant</h1>
+                <h1 className="Choose large text-center mb-5 ">Choose a Restaurant</h1>
 
                 {!sessionStorage.getItem("restaurantId") && (
                     <Row>
@@ -83,7 +84,7 @@ const Main = () => {
                     </Row>
                 )}
             </Container>
-
+            </div>
             <footer className="background py-4">
                 <Container>
                     <div className="text-center text-white">

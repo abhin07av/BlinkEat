@@ -35,10 +35,10 @@ const OrderHistory = () => {
     }, [firebase.user, firebase.db]);
 
     return (
-        <div className="min-vh-100 d-flex flex-column">
+        <div className="backgroundimage min-vh-100 d-flex flex-column">
             <OwnerNavBar />
             <Container className="py-5">
-                <h1 className="text-center mb-4 fw-bold">📜 Order History</h1>
+                <h1 className="orangebg text-center mb-4 fw-bold">📜 Order History</h1>
                 {loading ? (
                     <p className="text-center fs-5">Loading history...</p>
                 ) : history.length === 0 ? (
