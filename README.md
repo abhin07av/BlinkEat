@@ -1,4 +1,6 @@
-🍽️ BlinkEat – Food Ordering Platform || Website LINK: https://blinkeat-32091.web.app 
+🍽️ BlinkEat – Food Ordering Platform
+🌐 Website: https://blinkeat-32091.web.app
+
 BlinkEat is a full-stack food ordering platform built using React.js and Firebase. It allows users to explore restaurant menus, place orders, and manage their order history. Restaurant owners can register their restaurants, update menus, and track orders through a dedicated dashboard.
 
 🚀 Features
@@ -8,41 +10,24 @@ BlinkEat is a full-stack food ordering platform built using React.js and Firebas
 🛒 Cart Management – Add items to the cart and modify quantities.
 📝 Place Orders – Secure and seamless order placement.
 📜 Order History – View past orders and track order status.
-🔐 User Authentication – Sign up and login using email/password or Google.
+🔐 User Authentication – Sign up and log in using email/password or Google.
 ✅ Owner Features
 🏢 Register Restaurant – Owners can register their restaurants.
-📝 Update Menus – Owners can add, remove, and update menu items.
+📝 Update Menus – Add, remove, and update menu items.
 📦 Manage Orders – Track and update the status of customer orders.
 📊 Dashboard – Dedicated dashboard for managing restaurant operations.
 🏗️ Tech Stack
-Frontend: React.js, React Router, Bootstrap
-Backend: Firebase Firestore (Database), Firebase Auth (Authentication)
-State Management: Context API
-Deployment: Firebase Hosting
-📸 Screenshots
-🔖 Restaurant Listings Page
-📝 Menu and Order Placement
-📦 Order History
-🏢 Owner Dashboard
-🌐 How to Run
-Clone the repository:
-bash
-Copy
-Edit
-git clone https://github.com/yourusername/blinkeat.git
-Install dependencies:
-bash
-Copy
-Edit
+💻 Frontend: React.js, React Router, Bootstrap
+🔙 Backend: Firebase Firestore (Database), Firebase Auth (Authentication)
+⚙️ State Management: Context API
+🚀 Deployment: Firebase Hosting
+🛠️ How to Run
+🧬 Clone the repository
+git clone https://github.com/abhi-14gyan/blinkeat.git
+📦 Install dependencies
 npm install
-Start the development server:
-bash
-Copy
-Edit
+🚴 Start the development server
 npm start
 ❤️ Contributing
 Feel free to fork this repository, create a new branch, and submit a pull request with your improvements!
-
-⭐ License
-This project is licensed under the MIT License.
->>>>>>> 23b24eac431a284a5cef9ebe76f7d3569a336730
+Let's build a better BlinkEat together! 🙌
