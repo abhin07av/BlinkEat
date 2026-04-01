@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "blinkeat-32091",
     "public": "build",
     "ignore": [
       "firebase.json",
