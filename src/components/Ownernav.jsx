@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useFirebase } from "../context/Firebase";
+import { useTheme } from "../context/ThemeProvider";
 
 const OwnerNavBar = () => {
   const firebase = useFirebase();
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { isDark, toggleTheme } = useTheme();
 
   const isActive = (path) => location.pathname === path;
 
@@ -73,6 +75,15 @@ const OwnerNavBar = () => {
         </li>
         <li>
           <Link
+            to="/analytics"
+            className={`navbar-link ${isActive("/analytics") ? "active" : ""}`}
+            onClick={() => setIsOpen(false)}
+          >
+            📈 Analytics
+          </Link>
+        </li>
+        <li>
+          <Link
             to="/"
             className={`navbar-link ${isActive("/") ? "active" : ""}`}
             onClick={() => setIsOpen(false)}
@@ -81,6 +92,11 @@ const OwnerNavBar = () => {
           </Link>
         </li>
         <div className="navbar-separator" />
+        <li>
+          <button className="navbar-link theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
+            {isDark ? "☀️" : "🌙"}
+          </button>
+        </li>
         <li>
           <div className="navbar-avatar">{userInitial}</div>
         </li>

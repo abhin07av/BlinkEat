@@ -4,7 +4,9 @@ import { useToast } from "../components/Toast";
 import axios from "axios";
 import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { QRCodeCanvas } from "qrcode.react";
+import { Link } from "react-router-dom";
 import SignedNavBar from "../components/SignedinNav";
+import PageTransition from "../components/PageTransition";
 
 const PlaceOrder = () => {
   const firebase = useFirebase();
@@ -17,6 +19,8 @@ const PlaceOrder = () => {
   const [uploading, setUploading] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [placedOrderId, setPlacedOrderId] = useState(null);
+  const [placedRestaurantId, setPlacedRestaurantId] = useState(null);
 
   useEffect(() => {
     const fetchRestaurantUPI = async () => {
@@ -131,7 +135,10 @@ const PlaceOrder = () => {
         timestamp: serverTimestamp(),
       };
 
-      await addDoc(collection(firebase.db, `restaurants/${restaurantId}/orders`), orderData);
+      const orderRef = await addDoc(collection(firebase.db, `restaurants/${restaurantId}/orders`), orderData);
+      
+      setPlacedOrderId(orderRef.id);
+      setPlacedRestaurantId(restaurantId);
       
       sessionStorage.removeItem("orders");
       setOrders([]);
@@ -149,26 +156,39 @@ const PlaceOrder = () => {
   // Order success screen
   if (orderPlaced) {
     return (
-      <div className="checkout-page">
-        <SignedNavBar />
-        <div className="container flex-center" style={{ minHeight: 'calc(100vh - var(--navbar-height))' }}>
-          <div className="text-center animate-scaleIn" style={{ maxWidth: '400px' }}>
-            <div style={{ fontSize: '80px', marginBottom: '16px' }}>🎉</div>
-            <h2 className="text-3xl font-extrabold mb-md gradient-text">Order Placed!</h2>
-            <p className="text-secondary mb-xl">
-              Your order at <strong className="text-primary">{restaurantName}</strong> has been 
-              confirmed. The restaurant will start preparing your food shortly.
-            </p>
-            <a href="/" className="btn btn-primary btn-lg">
-              Back to Restaurants
-            </a>
+      <PageTransition>
+        <div className="checkout-page">
+          <SignedNavBar />
+          <div className="container flex-center" style={{ minHeight: 'calc(100vh - var(--navbar-height))' }}>
+            <div className="text-center animate-scaleIn" style={{ maxWidth: '400px' }}>
+              <div style={{ fontSize: '80px', marginBottom: '16px' }}>🎉</div>
+              <h2 className="text-3xl font-extrabold mb-md gradient-text">Order Placed!</h2>
+              <p className="text-secondary mb-xl">
+                Your order at <strong className="text-primary">{restaurantName}</strong> has been 
+                confirmed. The restaurant will start preparing your food shortly.
+              </p>
+              <div className="flex flex-col gap-md">
+                {placedOrderId && placedRestaurantId && (
+                  <Link
+                    to={`/track-order/${placedRestaurantId}/${placedOrderId}`}
+                    className="btn btn-primary btn-lg"
+                  >
+                    📍 Track Your Order
+                  </Link>
+                )}
+                <Link to="/" className="btn btn-ghost btn-lg">
+                  Back to Restaurants
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </PageTransition>
     );
   }
 
   return (
+    <PageTransition>
     <div className="checkout-page">
       <SignedNavBar />
 
@@ -309,6 +329,7 @@ const PlaceOrder = () => {
         </div>
       </div>
     </div>
+    </PageTransition>
   );
 };
 

@@ -32,6 +32,7 @@ export const useFirebase = () => useContext(FirebaseContext);
 export const FirebaseProvider = (props) => {
     const [user, setUser] = useState(null);
     const [role, setRole] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [items, setItems] = useState(0);
     const [orders, setOrders] = useState([]);
 
@@ -56,6 +57,7 @@ export const FirebaseProvider = (props) => {
                 sessionStorage.removeItem("userId");
                 sessionStorage.removeItem("role");
             }
+            setLoading(false);
         });
     }, []);
     
@@ -113,7 +115,7 @@ export const FirebaseProvider = (props) => {
     return (
         <FirebaseContext.Provider value={{
             signup, signin, signinWithGoogle, signOut, firebaseAuth, db, user,
-            isLoggedIn, role, items, setItems, getUserData, orders,setOrders, updateOrderStatus
+            isLoggedIn, loading, role, items, setItems, getUserData, orders, setOrders, updateOrderStatus
         }}>
             {props.children}
         </FirebaseContext.Provider>

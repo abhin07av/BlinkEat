@@ -5,6 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import SignedNavBar from "../components/SignedinNav";
 import MyNavBar from "../components/Navbar";
 import OwnerNavBar from "../components/Ownernav";
+import PageTransition from "../components/PageTransition";
 
 const MenuPage = () => {
   const firebase = useFirebase();
@@ -16,6 +17,7 @@ const MenuPage = () => {
   });
   const [isOwner, setIsOwner] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const categoryRefs = useRef({});
 
   useEffect(() => {
@@ -86,7 +88,26 @@ const MenuPage = () => {
 
   const categories = Object.keys(menuItems);
 
+  // Filter items by search query
+  const getFilteredItems = () => {
+    if (!searchQuery.trim()) return menuItems;
+    const query = searchQuery.toLowerCase();
+    const filtered = {};
+    Object.entries(menuItems).forEach(([category, items]) => {
+      const matching = items.filter((item) =>
+        item.name.toLowerCase().includes(query)
+      );
+      if (matching.length > 0) filtered[category] = matching;
+    });
+    return filtered;
+  };
+
+  const filteredItems = getFilteredItems();
+  const filteredCategories = Object.keys(filteredItems);
+  const totalFilteredItems = Object.values(filteredItems).flat().length;
+
   return (
+    <PageTransition>
     <div className="menu-page">
       {!firebase.user && <MyNavBar />}
       {firebase.user && (isOwner ? <OwnerNavBar /> : <SignedNavBar />)}
@@ -102,8 +123,38 @@ const MenuPage = () => {
           </p>
         </div>
 
-        {/* Category Tabs */}
+        {/* Search Bar */}
         {categories.length > 0 && (
+          <div className="search-bar mx-auto mb-lg" style={{ maxWidth: '500px' }}>
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search for a dish..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                className="search-clear"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Search results count */}
+        {searchQuery && (
+          <p className="text-center text-sm text-secondary mb-md">
+            {totalFilteredItems} {totalFilteredItems === 1 ? 'item' : 'items'} found for "{searchQuery}"
+          </p>
+        )}
+
+        {/* Category Tabs - hide when searching */}
+        {categories.length > 0 && !searchQuery && (
           <div className="category-tabs">
             {categories.map((category) => (
               <button
@@ -120,8 +171,8 @@ const MenuPage = () => {
 
         {/* Menu Items by Category */}
         <div className="py-xl" style={{ paddingBottom: orders.length > 0 ? '120px' : '48px' }}>
-          {categories.length > 0 ? (
-            categories.map((category) => (
+          {filteredCategories.length > 0 ? (
+            filteredCategories.map((category) => (
               <div
                 key={category}
                 className="category-section"
@@ -129,11 +180,11 @@ const MenuPage = () => {
               >
                 <h2 className="category-title">
                   {category}
-                  <span className="badge badge-primary">{menuItems[category].length}</span>
+                  <span className="badge badge-primary">{filteredItems[category].length}</span>
                 </h2>
 
                 <div className="stagger-children">
-                  {menuItems[category].map((item) => (
+                  {filteredItems[category].map((item) => (
                     <div key={item.id} className="menu-item">
                       <div className="menu-item-info">
                         <div
@@ -205,6 +256,7 @@ const MenuPage = () => {
         </div>
       )}
     </div>
+    </PageTransition>
   );
 };
 

@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useTheme } from "../context/ThemeProvider";
 
 const MyNavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { isDark, toggleTheme } = useTheme();
 
   const isActive = (path) => location.pathname === path;
 
@@ -60,6 +62,11 @@ const MyNavBar = () => {
           </Link>
         </li>
         <div className="navbar-separator" />
+        <li>
+          <button className="navbar-link theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
+            {isDark ? "☀️" : "🌙"}
+          </button>
+        </li>
         <li>
           <Link
             to="/loginowner"
