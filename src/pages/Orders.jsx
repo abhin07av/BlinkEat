@@ -1,118 +1,138 @@
 import React, { useState, useEffect } from "react";
 import { useFirebase } from "../context/Firebase";
+import { useToast } from "../components/Toast";
 import { collection, getDocs, doc, deleteDoc, addDoc, serverTimestamp } from "firebase/firestore";
-import { Card, Table, Container, Button } from "react-bootstrap";
 import OwnerNavBar from "../components/Ownernav";
 
 const Orders = () => {
-    const firebase = useFirebase();
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
+  const firebase = useFirebase();
+  const toast = useToast();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchOrders = async () => {
-            if (!firebase.user) return;
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!firebase.user) return;
 
-            try {
-                const restaurantId = firebase.user.uid;
-                const ordersRef = collection(firebase.db, "restaurants", restaurantId, "orders");
-                const querySnapshot = await getDocs(ordersRef);
-
-                const orderList = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                }));
-
-                setOrders(orderList);
-                setLoading(false);
-            } catch (error) {
-                console.error("Error fetching orders:", error);
-                setLoading(false);
-            }
-        };
-
-        fetchOrders();
-    }, [firebase.user, firebase.db]);
-
-    // ✅ Move order to history and delete it from active orders
-    const handleRemoveOrder = async (order) => {
+      try {
         const restaurantId = firebase.user.uid;
-        const orderRef = doc(firebase.db, "restaurants", restaurantId, "orders", order.id);
-        const historyRef = collection(firebase.db, "restaurants", restaurantId, "orderHistory");
+        const ordersRef = collection(firebase.db, "restaurants", restaurantId, "orders");
+        const querySnapshot = await getDocs(ordersRef);
 
-        try {
-            // ✅ Add order to history
-            await addDoc(historyRef, { ...order, timestamp: serverTimestamp() });
+        const orderList = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-            // ✅ Remove order from active orders
-            await deleteDoc(orderRef);
-
-            // ✅ Update UI
-            setOrders(orders.filter(o => o.id !== order.id));
-        } catch (error) {
-            console.error("Error removing order:", error);
-        }
+        setOrders(orderList);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+        setLoading(false);
+      }
     };
 
-    return (
-        <div className="backgroundimage min-vh-100 d-flex flex-column">
-            <OwnerNavBar />
-            <Container className="py-5">
-                <h1 className="orangebg text-center mb-4 fw-bold">📦 Active Orders</h1>
-                {loading ? (
-                    <p className="text-center fs-5">Loading orders...</p>
-                ) : orders.length === 0 ? (
-                    <p className="text-center fs-5">No active orders.</p>
-                ) : (
-                    <Card className="p-4 border-secondary shadow-lg">
-                        <div className="table-responsive"> {/* ✅ Table now scrolls on small screens */}
-                            <Table bordered hover variant="dark" className="text-center">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Customer</th>
-                                        <th>Order Details</th>
-                                        <th>Total Price (₹)</th>
-                                        <th>Payment Screenshot</th>
-                                        <th>Time</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {orders.map((order, index) => (
-                                        <tr key={order.id}>
-                                            <td>{index + 1}</td>
-                                            <td className="text-wrap">{order.customerName || "Unknown"}</td>  
-                                            <td className="text-wrap">{order.items.map(item => `${item.name} x ${item.quantity}`).join(", ")}</td>
-                                            <td>{order.totalAmount}</td>
-                                            <td>
-                                                {order.paymentScreenshot ? (
-                                                    <img 
-                                                        src={order.paymentScreenshot} 
-                                                        alt="Payment Screenshot" 
-                                                        className="img-fluid rounded shadow" 
-                                                        style={{ maxWidth: "100px", height: "auto" }} 
-                                                    />
-                                                ) : (
-                                                    "No Screenshot"
-                                                )}
-                                            </td>
-                                            <td className="text-wrap">{new Date(order.timestamp?.seconds * 1000).toLocaleString()}</td>
-                                            <td>
-                                                <Button variant="success" size="sm" onClick={() => handleRemoveOrder(order)}>
-                                                    Order Delivered
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </Table>
-                        </div>
-                    </Card>
-                )}
-            </Container>
-        </div>
-    );
+    fetchOrders();
+  }, [firebase.user, firebase.db]);
+
+  const handleRemoveOrder = async (order) => {
+    const restaurantId = firebase.user.uid;
+    const orderRef = doc(firebase.db, "restaurants", restaurantId, "orders", order.id);
+    const historyRef = collection(firebase.db, "restaurants", restaurantId, "orderHistory");
+
+    try {
+      await addDoc(historyRef, { ...order, timestamp: serverTimestamp() });
+      await deleteDoc(orderRef);
+      setOrders(orders.filter((o) => o.id !== order.id));
+      toast.success("Order completed", `Order from ${order.customerName || "customer"} moved to history.`);
+    } catch (error) {
+      console.error("Error removing order:", error);
+      toast.error("Error", "Failed to complete order. Please try again.");
+    }
+  };
+
+  return (
+    <div className="dashboard-page">
+      <OwnerNavBar />
+
+      <div className="container py-xl">
+        <h1 className="text-3xl font-extrabold text-center mb-lg">
+          <span className="gradient-text">📦 Active Orders</span>
+        </h1>
+
+        {loading ? (
+          <div className="text-center py-3xl">
+            <span className="spinner" style={{ margin: '0 auto' }} />
+            <p className="text-secondary mt-md">Loading orders...</p>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-3xl">
+            <p style={{ fontSize: '60px', opacity: 0.3, marginBottom: '16px' }}>📦</p>
+            <p className="text-xl font-semibold text-secondary">No active orders</p>
+            <p className="text-sm text-tertiary mt-sm">New orders will appear here</p>
+          </div>
+        ) : (
+          <div className="stagger-children">
+            {orders.map((order, index) => (
+              <div key={order.id} className="order-card">
+                <div className="order-card-header">
+                  <div className="flex items-center gap-md">
+                    <span className="text-lg font-bold">#{index + 1}</span>
+                    <span className="order-status order-status-new">New Order</span>
+                  </div>
+                  <span className="text-sm text-tertiary">
+                    {order.timestamp?.seconds
+                      ? new Date(order.timestamp.seconds * 1000).toLocaleString()
+                      : "Just now"}
+                  </span>
+                </div>
+
+                <div className="flex-between items-start gap-lg" style={{ flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: '200px' }}>
+                    <p className="font-bold text-lg mb-sm">
+                      {order.customerName || "Unknown Customer"}
+                    </p>
+                    <div className="flex flex-wrap gap-sm mb-md">
+                      {order.items.map((item, i) => (
+                        <span key={i} className="tag">
+                          {item.name} × {item.quantity}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-2xl font-extrabold text-coral">
+                      ₹{order.totalAmount}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-md">
+                    {order.paymentScreenshot ? (
+                      <a
+                        href={order.paymentScreenshot}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-ghost btn-sm"
+                      >
+                        📷 View Payment
+                      </a>
+                    ) : (
+                      <span className="text-sm text-tertiary">No screenshot</span>
+                    )}
+
+                    <button
+                      className="btn btn-success"
+                      onClick={() => handleRemoveOrder(order)}
+                    >
+                      ✅ Order Delivered
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default Orders;

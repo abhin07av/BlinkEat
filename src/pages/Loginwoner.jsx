@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
-import Button from "react-bootstrap/Button";
 import { useNavigate } from "react-router-dom";
-import Form from "react-bootstrap/Form";
 import { useFirebase } from "../context/Firebase";
+import { useToast } from "../components/Toast";
 import { doc, getDoc } from "firebase/firestore";
-import bgImage from "../assets/Chef_Hat.png";
 import LoginpgNavBar from "../components/loginpgnav";
 
 const Loginowner = () => {
   const firebase = useFirebase();
   const nav = useNavigate();
+  const toast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const checkUserRole = useCallback(async (userId) => {
     try {
@@ -23,7 +24,7 @@ const Loginowner = () => {
         if (role === "owner") {
           nav("/owner-dashboard");
         } else {
-          alert("❌ Please sign in as a Customer or Register as an Owner.");
+          toast.warning("Access denied", "This account is registered as a Customer, not an Owner.");
           nav("/");
         }
       } else {
@@ -32,7 +33,7 @@ const Loginowner = () => {
     } catch (error) {
       console.error("Error checking user role:", error);
     }
-  }, [firebase.db, nav]);
+  }, [firebase.db, nav, toast]);
 
   useEffect(() => {
     if (firebase.user) {
@@ -42,97 +43,136 @@ const Loginowner = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const result = await firebase.signin(email, password);
       checkUserRole(result.user.uid);
     } catch (error) {
       console.error("Login failed:", error);
-      alert("❌ Login failed. Please try again.");
+      toast.error("Login failed", "Please check your credentials and try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setIsLoading(true);
     try {
       const result = await firebase.signinWithGoogle();
       checkUserRole(result.user.uid);
     } catch (error) {
       console.error("Google sign-in failed:", error);
-      alert("❌ Google sign-in failed. Please try again.");
+      toast.error("Google sign-in failed", "Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-vh-100 d-flex flex-column">
-      {/* ✅ Increased z-index to make navbar clickable */}
-      <div style={{ zIndex: 10 }}>
-        <LoginpgNavBar />
-      </div>
-      
-      {/* ✅ Background with consistent styling */}
-      <div 
-        className="flex-grow-1 d-flex justify-content-center align-items-center position-relative"
-        style={{
-          backgroundImage: `url(${bgImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        {/* ✅ Reduced overlay z-index so it doesn't block the navbar */}
-        <div className="position-absolute top-0 start-0 w-100 h-100 bg-black opacity-50" style={{ zIndex: 1 }}></div>
+    <div className="auth-page">
+      <LoginpgNavBar />
 
-        {/* ✅ Form Container */}
-        <div className="position-relative bg-white rounded-3 shadow-lg p-4 w-100" style={{ maxWidth: "400px", zIndex: 5 }}>
-          <h2 className="text-center text-dark fw-bold mb-4">
-            🔑 Identify Yourself
-          </h2>
+      <div className="auth-content">
+        <div className="auth-bg" />
+        <div className="auth-bg-pattern" />
 
-          {/* ✅ Form */}
-          <Form onSubmit={handleLogin}>
-            {/* Email Field */}
-            <Form.Group controlId="formBasicEmail" className="mb-3">
-              <Form.Label className="fw-semibold">Email Address</Form.Label>
-              <Form.Control
+        <div className="auth-card animate-scaleIn">
+          <div className="auth-header">
+            <div className="auth-icon" style={{ 
+              background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-hover))' 
+            }}>
+              🏪
+            </div>
+            <h2 className="auth-title">Owner Login</h2>
+            <p className="auth-subtitle">Access your restaurant dashboard</p>
+          </div>
+
+          <form onSubmit={handleLogin}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="owner-email">Email Address</label>
+              <input
+                id="owner-email"
                 type="email"
-                placeholder="Enter email"
+                className="form-input"
+                placeholder="owner@restaurant.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
               />
-            </Form.Group>
-
-            {/* Password Field */}
-            <Form.Group controlId="formBasicPassword" className="mb-3">
-              <Form.Label className="fw-semibold">Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </Form.Group>
-
-            {/* ✅ Buttons */}
-            <div className="d-grid gap-2">
-              <Button variant="primary" type="submit" className="fw-semibold">
-                Sign In
-              </Button>
-              <Button variant="danger" onClick={handleGoogleLogin} className="fw-semibold">
-                Sign in with Google
-              </Button>
             </div>
-          </Form>
 
-          {/* ✅ Register Link */}
-          <div className="mt-4 text-center">
-            <p className="text-secondary">Don't have an account?</p>
-            <Button 
-              variant="warning" 
-              className="fw-semibold" 
-              onClick={() => nav("/register")}
+            <div className="form-group">
+              <label className="form-label" htmlFor="owner-password">Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="owner-password"
+                  type={showPassword ? "text" : "password"}
+                  className="form-input"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  style={{ paddingRight: '50px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-text-tertiary)',
+                    cursor: 'pointer',
+                    fontSize: 'var(--text-sm)',
+                    padding: '4px',
+                  }}
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-accent btn-full btn-lg"
+              disabled={isLoading}
             >
-              Register
-            </Button>
+              {isLoading ? (
+                <span className="flex-center gap-sm">
+                  <span className="spinner spinner-sm" />
+                  Signing in...
+                </span>
+              ) : (
+                "Sign In as Owner"
+              )}
+            </button>
+          </form>
+
+          <div className="auth-divider">or</div>
+
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="google-btn"
+            disabled={isLoading}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            </svg>
+            Continue with Google
+          </button>
+
+          <div className="auth-footer">
+            <p>Don't have an account? <button onClick={() => nav("/register")}>Register as Owner</button></p>
           </div>
         </div>
       </div>

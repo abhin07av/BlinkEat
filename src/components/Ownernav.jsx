@@ -1,46 +1,96 @@
-import React from "react";
-import Container from 'react-bootstrap/Container';
-import Nav from 'react-bootstrap/Nav';
-import Navbar from 'react-bootstrap/Navbar';
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useFirebase } from "../context/Firebase";
 
 const OwnerNavBar = () => {
   const firebase = useFirebase();
-  const restaurantId = sessionStorage.getItem("restaurantId");
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+
+  const isActive = (path) => location.pathname === path;
 
   const handleLogout = () => {
-    sessionStorage.removeItem("restaurantId"); // Remove restaurant ID on logout
+    sessionStorage.removeItem("restaurantId");
+    sessionStorage.removeItem("orders");
     firebase.signOut(firebase.firebaseAuth);
+    setIsOpen(false);
   };
 
-  const handleBlinkeat = () => {
-    sessionStorage.removeItem("restaurantId"); // Remove restaurant ID on logout
-  };
+  const userInitial = firebase.user?.email?.[0]?.toUpperCase() || "O";
 
   return (
-    <Navbar bg="dark" data-bs-theme="dark" expand="lg" className="w-100">
-      <Container fluid>
-        {/* ✅ Removed extra spaces and fixed alignment */}
-        <Navbar.Brand href="https://blinkeat-32091.web.app/" onClick={handleBlinkeat}>
-          <div className="text-2xl font-bold text-white d-flex align-items-center">
-            <span className="me-1">🍽️</span>
-            BlinkEat
-          </div>
-        </Navbar.Brand>
+    <nav className="navbar">
+      <Link to="/owner-dashboard" className="navbar-brand">
+        <span className="navbar-brand-icon">🍽️</span>
+        <span className="navbar-brand-text">BlinkEat</span>
+        <span className="badge badge-accent" style={{ marginLeft: '8px', fontSize: '10px' }}>Owner</span>
+      </Link>
 
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="me-auto">
-            <Nav.Link href="https://blinkeat-32091.web.app/home">Home</Nav.Link>
-            <Nav.Link href="https://blinkeat-32091.web.app" onClick={handleLogout}>Logout</Nav.Link>
-            <Nav.Link href={`https://blinkeat-32091.web.app/menu/${restaurantId}`}>Menu</Nav.Link>
-            <Nav.Link href="https://blinkeat-32091.web.app/owner-dashboard">Update Menu</Nav.Link>
-            <Nav.Link href="https://blinkeat-32091.web.app/orders">Orders</Nav.Link>
-            <Nav.Link href="https://blinkeat-32091.web.app/OrderHistory">Order History</Nav.Link>
-          </Nav>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
+      <button
+        className={`navbar-toggle ${isOpen ? "open" : ""}`}
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Toggle navigation"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      {isOpen && (
+        <div
+          className={`navbar-overlay ${isOpen ? "open" : ""}`}
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      <ul className={`navbar-links ${isOpen ? "open" : ""}`}>
+        <li>
+          <Link
+            to="/owner-dashboard"
+            className={`navbar-link ${isActive("/owner-dashboard") ? "active" : ""}`}
+            onClick={() => setIsOpen(false)}
+          >
+            📊 Dashboard
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/orders"
+            className={`navbar-link ${isActive("/orders") ? "active" : ""}`}
+            onClick={() => setIsOpen(false)}
+          >
+            📦 Orders
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/OrderHistory"
+            className={`navbar-link ${isActive("/OrderHistory") ? "active" : ""}`}
+            onClick={() => setIsOpen(false)}
+          >
+            📜 History
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/"
+            className={`navbar-link ${isActive("/") ? "active" : ""}`}
+            onClick={() => setIsOpen(false)}
+          >
+            🏠 Restaurants
+          </Link>
+        </li>
+        <div className="navbar-separator" />
+        <li>
+          <div className="navbar-avatar">{userInitial}</div>
+        </li>
+        <li>
+          <button className="navbar-link" onClick={handleLogout}>
+            Logout
+          </button>
+        </li>
+      </ul>
+    </nav>
   );
 };
 

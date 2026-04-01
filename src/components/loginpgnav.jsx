@@ -1,26 +1,22 @@
 import React from "react";
-import Container from 'react-bootstrap/Container';
-import Navbar from 'react-bootstrap/Navbar';
+import { Link } from "react-router-dom";
 
 const LoginpgNavBar = () => {
   return (
-    <Navbar bg="dark" data-bs-theme="dark" expand="lg" className="w-100">
-      <Container fluid>
-        {/* ✅ Removed extra spaces and fixed alignment */}
-        <Navbar.Brand href="https://blinkeat-32091.web.app">
-          <div className="text-2xl font-bold text-white d-flex align-items-center">
-            <span className="me-1">🍽️</span>
-            BlinkEat
-          </div>
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Navbar.Brand href="https://blinkeat-32091.web.app/home">
-            Home
-          </Navbar.Brand>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
+    <nav className="navbar" style={{ background: 'rgba(13, 17, 23, 0.6)' }}>
+      <Link to="/" className="navbar-brand">
+        <span className="navbar-brand-icon">🍽️</span>
+        <span className="navbar-brand-text">BlinkEat</span>
+      </Link>
+
+      <ul className="navbar-links">
+        <li>
+          <Link to="/" className="navbar-link">
+            ← Back to Home
+          </Link>
+        </li>
+      </ul>
+    </nav>
   );
 };
 

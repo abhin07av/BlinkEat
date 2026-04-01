@@ -1,22 +1,36 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
 import { useFirebase } from "../context/Firebase";
-import bgImage from "../assets/register.png";
+import { useToast } from "../components/Toast";
 import LoginpgNavBar from "../components/loginpgnav";
 import { doc, setDoc } from "firebase/firestore";
 
 const RegisterPage = () => {
   const firebase = useFirebase();
   const nav = useNavigate();
+  const toast = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("customer"); // Default: Customer
+  const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState("customer");
   const [restaurantName, setRestaurantName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ Function to check if orders exist and redirect accordingly
+  const getPasswordStrength = () => {
+    if (password.length === 0) return { level: 0, label: "", color: "" };
+    if (password.length < 6) return { level: 1, label: "Too short", color: "var(--color-error)" };
+    if (password.length < 8) return { level: 2, label: "Weak", color: "var(--color-warning)" };
+    const hasUpper = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[^A-Za-z0-9]/.test(password);
+    const score = [hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
+    if (score >= 2) return { level: 4, label: "Strong", color: "var(--color-success)" };
+    return { level: 3, label: "Fair", color: "var(--color-warning)" };
+  };
+
+  const strength = getPasswordStrength();
+
   const checkOrdersAndRedirect = useCallback(() => {
     const orders = JSON.parse(sessionStorage.getItem("orders")) || [];
     if (orders.length > 0) {
@@ -34,20 +48,18 @@ const RegisterPage = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    console.log("Registering...");
+    setIsLoading(true);
 
     try {
       const user = await firebase.signup(email, password, role);
       const userId = user.uid;
 
-      // ✅ Save user role in Firestore
       await setDoc(doc(firebase.db, "users", userId), {
         uid: userId,
         email: user.email,
         role: role,
       });
 
-      // ✅ If user is an owner, save restaurant details
       if (role === "owner") {
         await setDoc(doc(firebase.db, "restaurants", userId), {
           ownerId: userId,
@@ -56,119 +68,170 @@ const RegisterPage = () => {
         });
       }
 
-      console.log("User registered successfully!");
-
-      // ✅ Store userId and role in sessionStorage
       sessionStorage.setItem("userId", userId);
       sessionStorage.setItem("role", role);
 
+      toast.success("Welcome to BlinkEat!", "Your account has been created successfully.");
       nav(role === "owner" ? "/owner-dashboard" : "/");
     } catch (error) {
       console.error("Registration failed:", error);
-      alert("❌ Registration failed. Please try again.");
+      toast.error("Registration failed", error.message || "Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-vh-100 d-flex flex-column">
-      {/* ✅ Navigation Bar with Higher Z-Index */}
-      <div style={{ zIndex: 10 }}>
-        <LoginpgNavBar />
-      </div>
+    <div className="auth-page">
+      <LoginpgNavBar />
 
-      {/* ✅ Background with opacity */}
-      <div
-        className="flex-grow-1 d-flex justify-content-center align-items-center position-relative"
-        style={{
-          backgroundImage: `url(${bgImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        {/* ✅ Reduced z-index of overlay */}
-        <div
-          className="position-absolute top-0 start-0 w-100 h-100 bg-black opacity-50"
-          style={{ zIndex: 1 }}
-        ></div>
+      <div className="auth-content">
+        <div className="auth-bg" />
+        <div className="auth-bg-pattern" />
 
-        {/* ✅ Form Container */}
-        <div
-          className="position-relative bg-white rounded-3 shadow-lg p-4 w-100"
-          style={{ maxWidth: "400px", zIndex: 5 }}
-        >
-          <h2 className="text-center text-dark fw-bold mb-4">📝 Register Yourself</h2>
+        <div className="auth-card animate-scaleIn">
+          <div className="auth-header">
+            <div className="auth-icon">📝</div>
+            <h2 className="auth-title">Create Account</h2>
+            <p className="auth-subtitle">Join BlinkEat and start ordering in seconds</p>
+          </div>
 
-          {/* ✅ Form */}
-          <Form onSubmit={handleRegister}>
-            {/* Email Field */}
-            <Form.Group controlId="formBasicEmail" className="mb-3">
-              <Form.Label className="fw-semibold">Email Address</Form.Label>
-              <Form.Control
+          <form onSubmit={handleRegister}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="reg-email">Email Address</label>
+              <input
+                id="reg-email"
                 type="email"
-                placeholder="Enter email"
+                className="form-input"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
               />
-            </Form.Group>
+            </div>
 
-            {/* Password Field */}
-            <Form.Group controlId="formBasicPassword" className="mb-3">
-              <Form.Label className="fw-semibold">Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </Form.Group>
+            <div className="form-group">
+              <label className="form-label" htmlFor="reg-password">Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="reg-password"
+                  type={showPassword ? "text" : "password"}
+                  className="form-input"
+                  placeholder="Create a strong password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  style={{ paddingRight: '50px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-text-tertiary)',
+                    cursor: 'pointer',
+                    fontSize: 'var(--text-sm)',
+                    padding: '4px',
+                  }}
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+              {/* Password strength indicator */}
+              {password.length > 0 && (
+                <div style={{ marginTop: '8px' }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    marginBottom: '4px',
+                  }}>
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        style={{
+                          flex: 1,
+                          height: '3px',
+                          borderRadius: '2px',
+                          background: i <= strength.level ? strength.color : 'var(--color-border)',
+                          transition: 'all 0.3s ease',
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span style={{
+                    fontSize: 'var(--text-xs)',
+                    color: strength.color,
+                    fontWeight: 500,
+                  }}>
+                    {strength.label}
+                  </span>
+                </div>
+              )}
+            </div>
 
-            {/* Role Selector */}
-            <Form.Group controlId="formRole" className="mb-3">
-              <Form.Label className="fw-semibold">Role</Form.Label>
-              <Form.Select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                required
-              >
-                <option value="customer">Customer</option>
-                <option value="owner">Restaurant Owner</option>
-              </Form.Select>
-            </Form.Group>
+            <div className="form-group">
+              <label className="form-label" htmlFor="reg-role">I am a</label>
+              <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                <button
+                  type="button"
+                  className={`btn ${role === "customer" ? "btn-primary" : "btn-secondary"}`}
+                  style={{ flex: 1 }}
+                  onClick={() => setRole("customer")}
+                >
+                  🍽️ Customer
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${role === "owner" ? "btn-primary" : "btn-secondary"}`}
+                  style={{ flex: 1 }}
+                  onClick={() => setRole("owner")}
+                >
+                  🏪 Restaurant Owner
+                </button>
+              </div>
+            </div>
 
-            {/* Conditional Restaurant Name */}
             {role === "owner" && (
-              <Form.Group controlId="formRestaurantName" className="mb-3">
-                <Form.Label className="fw-semibold">Restaurant Name</Form.Label>
-                <Form.Control
+              <div className="form-group animate-fadeInUp">
+                <label className="form-label" htmlFor="reg-restaurant">Restaurant Name</label>
+                <input
+                  id="reg-restaurant"
                   type="text"
-                  placeholder="Enter restaurant name"
+                  className="form-input"
+                  placeholder="Enter your restaurant name"
                   value={restaurantName}
                   onChange={(e) => setRestaurantName(e.target.value)}
                   required
                 />
-              </Form.Group>
+              </div>
             )}
 
-            {/* ✅ Buttons */}
-            <div className="d-grid gap-2">
-              <Button variant="primary" type="submit" className="fw-semibold">
-                Register
-              </Button>
-            </div>
-          </Form>
-
-          {/* ✅ Sign-In Link */}
-          <div className="mt-4 text-center">
-            <p className="text-secondary">Already have an account?</p>
-            <Button
-              variant="warning"
-              className="fw-semibold"
-              onClick={() => nav("/login")}
+            <button
+              type="submit"
+              className="btn btn-primary btn-full btn-lg"
+              disabled={isLoading}
             >
-              Sign In
-            </Button>
+              {isLoading ? (
+                <span className="flex-center gap-sm">
+                  <span className="spinner spinner-sm" />
+                  Creating account...
+                </span>
+              ) : (
+                "Create Account"
+              )}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            <p>Already have an account? <button onClick={() => nav("/login")}>Sign in</button></p>
           </div>
         </div>
       </div>

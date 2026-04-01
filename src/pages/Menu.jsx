@@ -1,150 +1,211 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { useFirebase } from "../context/Firebase";
 import { useParams, useNavigate } from "react-router-dom";
 import SignedNavBar from "../components/SignedinNav";
 import MyNavBar from "../components/Navbar";
 import OwnerNavBar from "../components/Ownernav";
-import { Button } from "react-bootstrap";
-import "./Main.css";
 
 const MenuPage = () => {
-    const firebase = useFirebase();
-    const { restaurantId } = useParams();
-    const navigate = useNavigate();
-    const [menuItems, setMenuItems] = useState({});
-    const [orders, setOrders] = useState(() => {
-        return JSON.parse(sessionStorage.getItem("orders")) || [];
-    });
-    const [isOwner, setIsOwner] = useState(false);
+  const firebase = useFirebase();
+  const { restaurantId } = useParams();
+  const navigate = useNavigate();
+  const [menuItems, setMenuItems] = useState({});
+  const [orders, setOrders] = useState(() => {
+    return JSON.parse(sessionStorage.getItem("orders")) || [];
+  });
+  const [isOwner, setIsOwner] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("");
+  const categoryRefs = useRef({});
 
-    useEffect(() => {
-        const fetchMenu = async () => {
-            try {
-                console.log("Fetching menu for restaurant:", restaurantId);
-                const menuRef = collection(firebase.db, `restaurants/${restaurantId}/menu`);
-                const querySnapshot = await getDocs(menuRef);
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const menuRef = collection(firebase.db, `restaurants/${restaurantId}/menu`);
+        const querySnapshot = await getDocs(menuRef);
 
-                if (!querySnapshot.empty) {
-                    // ✅ Group items by category
-                    const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    const groupedItems = items.reduce((acc, item) => {
-                        if (!acc[item.category]) acc[item.category] = [];
-                        acc[item.category].push(item);
-                        return acc;
-                    }, {});
-                    setMenuItems(groupedItems);
-                } else {
-                    console.warn("No menu items found for this restaurant.");
-                }
-            } catch (error) {
-                console.error("Error fetching menu items:", error);
-            }
-        };
-
-        if (restaurantId) fetchMenu();
-    }, [firebase.db, restaurantId]);
-
-    useEffect(() => {
-        setIsOwner(firebase.user && firebase.role === "owner");
-    }, [firebase.user, firebase.role]);
-
-    // ✅ Function to add item to cart
-    const addToCart = (item) => {
-        const updatedOrders = [...orders, { ...item, quantity: 1 }];
-        setOrders(updatedOrders);
-        sessionStorage.setItem("orders", JSON.stringify(updatedOrders));
+        if (!querySnapshot.empty) {
+          const items = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          const groupedItems = items.reduce((acc, item) => {
+            if (!acc[item.category]) acc[item.category] = [];
+            acc[item.category].push(item);
+            return acc;
+          }, {});
+          setMenuItems(groupedItems);
+          setActiveCategory(Object.keys(groupedItems)[0] || "");
+        }
+      } catch (error) {
+        console.error("Error fetching menu items:", error);
+      }
     };
 
-    // ✅ Function to increase quantity
-    const increaseQuantity = (item) => {
-        const updatedOrders = orders.map(order =>
-            order.id === item.id ? { ...order, quantity: order.quantity + 1 } : order
-        );
+    if (restaurantId) fetchMenu();
+  }, [firebase.db, restaurantId]);
 
-        setOrders(updatedOrders);
-        sessionStorage.setItem("orders", JSON.stringify(updatedOrders));
-    };
+  useEffect(() => {
+    setIsOwner(firebase.user && firebase.role === "owner");
+  }, [firebase.user, firebase.role]);
 
-    // ✅ Function to decrease quantity
-    const decreaseQuantity = (item) => {
-        const updatedOrders = orders.map(order =>
-            order.id === item.id ? { ...order, quantity: order.quantity - 1 } : order
-        ).filter(order => order.quantity > 0);
+  const scrollToCategory = (category) => {
+    setActiveCategory(category);
+    categoryRefs.current[category]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
-        setOrders(updatedOrders);
-        sessionStorage.setItem("orders", JSON.stringify(updatedOrders));
-    };
+  const addToCart = (item) => {
+    const updatedOrders = [...orders, { ...item, quantity: 1 }];
+    setOrders(updatedOrders);
+    sessionStorage.setItem("orders", JSON.stringify(updatedOrders));
+  };
 
-    // ✅ Function to get item quantity
-    const getQuantity = (item) => {
-        const existingOrder = orders.find(order => order.id === item.id);
-        return existingOrder ? existingOrder.quantity : 0;
-    };
-
-    // ✅ Calculate total price
-    const getTotalPrice = () => {
-        return orders.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2);
-    };
-
-    return (
-        <div className="peach">
-            {/* ✅ Display appropriate navbar */}
-            {!firebase.user && <MyNavBar />}
-
-            {firebase.user && (isOwner ? <OwnerNavBar /> : <SignedNavBar />)}
-            <div className="background-section">
-                <div className="container-fluid min-vh-100 d-flex flex-column">
-                    <div className="container mt-4">
-                        <h2 className="mb-4 text-center Choose large underline">Restaurant Menu</h2>
-
-                        {/* ✅ Display Category-Wise Menu */}
-                        {Object.keys(menuItems).length > 0 ? (
-                            Object.entries(menuItems).map(([category, items]) => (
-                                <div key={category} className="mb-5">
-                                    <h3 className="large text-black">{category} ({items.length})</h3>
-                                    <div className="row">
-                                        {items.map((item) => (
-                                            <div key={item.id} className="menu orangetext background">
-                                                <div>{item.name}</div>
-                                                <div>₹{item.price.toFixed(2)}</div>
-                                                <div className="d-flex align-items-center">
-                                                    {getQuantity(item) > 0 ? (
-                                                        <>
-                                                            <Button variant="danger" onClick={() => decreaseQuantity(item)}>-</Button>
-                                                            <span className="mx-3">{getQuantity(item)}</span>
-                                                            <Button variant="success" onClick={() => increaseQuantity(item)}>+</Button>
-                                                        </>
-                                                    ) : (
-                                                        <button className="button" onClick={() => addToCart(item)}>Order Now</button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-center text-white">No menu items available.</p>
-                        )}
-
-                        {/* ✅ Cart Section */}
-                        {orders.length > 0 && (
-                            <div className="cart py-4 d-flex justify-content-between align-items-center">
-                                <h1 className="mr-1 text-white">🍽️ Your Orders</h1>
-                                <div className="d-flex align-items-center">
-                                    <span className="text-white me-3">Total: ₹{getTotalPrice()}</span>
-                                    <button className="viewcart" onClick={() => navigate("/carts")}>
-                                        View Cart ({orders.length})
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
+  const increaseQuantity = (item) => {
+    const updatedOrders = orders.map((order) =>
+      order.id === item.id ? { ...order, quantity: order.quantity + 1 } : order
     );
+    setOrders(updatedOrders);
+    sessionStorage.setItem("orders", JSON.stringify(updatedOrders));
+  };
+
+  const decreaseQuantity = (item) => {
+    const updatedOrders = orders
+      .map((order) =>
+        order.id === item.id ? { ...order, quantity: order.quantity - 1 } : order
+      )
+      .filter((order) => order.quantity > 0);
+    setOrders(updatedOrders);
+    sessionStorage.setItem("orders", JSON.stringify(updatedOrders));
+  };
+
+  const getQuantity = (item) => {
+    const existingOrder = orders.find((order) => order.id === item.id);
+    return existingOrder ? existingOrder.quantity : 0;
+  };
+
+  const getTotalPrice = () => {
+    return orders.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2);
+  };
+
+  const categories = Object.keys(menuItems);
+
+  return (
+    <div className="menu-page">
+      {!firebase.user && <MyNavBar />}
+      {firebase.user && (isOwner ? <OwnerNavBar /> : <SignedNavBar />)}
+
+      <div className="container">
+        {/* Header */}
+        <div className="menu-header">
+          <h1 className="menu-title gradient-text">Restaurant Menu</h1>
+          <p className="text-secondary">
+            {categories.length > 0
+              ? `${categories.length} categories • ${Object.values(menuItems).flat().length} items`
+              : "Loading menu..."}
+          </p>
+        </div>
+
+        {/* Category Tabs */}
+        {categories.length > 0 && (
+          <div className="category-tabs">
+            {categories.map((category) => (
+              <button
+                key={category}
+                className={`category-tab ${activeCategory === category ? "active" : ""}`}
+                onClick={() => scrollToCategory(category)}
+              >
+                {category}
+                <span className="category-count">({menuItems[category].length})</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Menu Items by Category */}
+        <div className="py-xl" style={{ paddingBottom: orders.length > 0 ? '120px' : '48px' }}>
+          {categories.length > 0 ? (
+            categories.map((category) => (
+              <div
+                key={category}
+                className="category-section"
+                ref={(el) => (categoryRefs.current[category] = el)}
+              >
+                <h2 className="category-title">
+                  {category}
+                  <span className="badge badge-primary">{menuItems[category].length}</span>
+                </h2>
+
+                <div className="stagger-children">
+                  {menuItems[category].map((item) => (
+                    <div key={item.id} className="menu-item">
+                      <div className="menu-item-info">
+                        <div
+                          className={
+                            item.category?.toLowerCase().includes("veg") &&
+                            !item.category?.toLowerCase().includes("non")
+                              ? "veg-indicator"
+                              : "nonveg-indicator"
+                          }
+                        />
+                        <span className="menu-item-name">{item.name}</span>
+                      </div>
+
+                      <span className="menu-item-price">₹{item.price.toFixed(2)}</span>
+
+                      <div>
+                        {getQuantity(item) > 0 ? (
+                          <div className="qty-stepper">
+                            <button
+                              className="qty-btn qty-btn-minus"
+                              onClick={() => decreaseQuantity(item)}
+                            >
+                              −
+                            </button>
+                            <span className="qty-value">{getQuantity(item)}</span>
+                            <button
+                              className="qty-btn"
+                              onClick={() => increaseQuantity(item)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <button className="btn btn-primary btn-sm" onClick={() => addToCart(item)}>
+                            Add +
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-3xl">
+              <p style={{ fontSize: '60px', opacity: 0.3, marginBottom: '16px' }}>📋</p>
+              <p className="text-xl font-semibold text-secondary">No menu items available</p>
+              <p className="text-sm text-tertiary mt-sm">
+                This restaurant hasn't added any items yet
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Floating Cart Bar */}
+      {orders.length > 0 && (
+        <div className="floating-cart">
+          <div className="floating-cart-info">
+            <span className="floating-cart-count">{orders.length}</span>
+            <div>
+              <div className="floating-cart-label">Your Order</div>
+              <div className="floating-cart-total">₹{getTotalPrice()}</div>
+            </div>
+          </div>
+          <button className="btn btn-primary" onClick={() => navigate("/carts")}>
+            View Cart →
+          </button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default MenuPage;

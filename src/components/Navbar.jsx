@@ -1,39 +1,76 @@
-import React from "react";
-import Container from 'react-bootstrap/Container';
-import Nav from 'react-bootstrap/Nav';
-import Navbar from 'react-bootstrap/Navbar';
-import { useFirebase } from "../context/Firebase";
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 const MyNavBar = () => {
-  const firebase = useFirebase();
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
 
-  const handleBlinkeat = () => {
-    sessionStorage.removeItem("restaurantId");
-  };
+  const isActive = (path) => location.pathname === path;
 
   return (
-    <Navbar bg="dark" data-bs-theme="dark" expand="lg" className="w-100">
-      <Container fluid>
-        {/* ✅ Removed extra space in href */}
-        <Navbar.Brand href="https://blinkeat-32091.web.app/" onClick={handleBlinkeat}>
-          <div className="text-2xl font-bold text-white d-flex align-items-center">
-            <span className="me-1">🍽️</span>
-            BlinkEat
-          </div>
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="ms-auto"> 
-            <Nav.Link href="https://blinkeat-32091.web.app/home">Home</Nav.Link>
-            <Nav.Link href="https://blinkeat-32091.web.app/register">Register</Nav.Link>
-            <Nav.Link href="https://blinkeat-32091.web.app/login">Sign In</Nav.Link>
-            <Nav.Link href="https://blinkeat-32091.web.app/loginowner" onClick={() => firebase.setowner(true)}>
-              Sign In as Owner
-            </Nav.Link>
-          </Nav>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
+    <nav className="navbar">
+      <Link to="/" className="navbar-brand">
+        <span className="navbar-brand-icon">🍽️</span>
+        <span className="navbar-brand-text">BlinkEat</span>
+      </Link>
+
+      <button
+        className={`navbar-toggle ${isOpen ? "open" : ""}`}
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Toggle navigation"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      {isOpen && (
+        <div
+          className={`navbar-overlay ${isOpen ? "open" : ""}`}
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      <ul className={`navbar-links ${isOpen ? "open" : ""}`}>
+        <li>
+          <Link
+            to="/home"
+            className={`navbar-link ${isActive("/home") ? "active" : ""}`}
+            onClick={() => setIsOpen(false)}
+          >
+            Home
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/register"
+            className={`navbar-link ${isActive("/register") ? "active" : ""}`}
+            onClick={() => setIsOpen(false)}
+          >
+            Register
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/login"
+            className={`navbar-link ${isActive("/login") ? "active" : ""}`}
+            onClick={() => setIsOpen(false)}
+          >
+            Sign In
+          </Link>
+        </li>
+        <div className="navbar-separator" />
+        <li>
+          <Link
+            to="/loginowner"
+            className="navbar-link navbar-link-highlight"
+            onClick={() => setIsOpen(false)}
+          >
+            🏪 Owner Login
+          </Link>
+        </li>
+      </ul>
+    </nav>
   );
 };
 
